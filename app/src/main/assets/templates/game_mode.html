@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Game Mode - Oh Hell! Scorer{% endblock %}
+{% block header_title %}Game Configuration{% endblock %}
+
+{% block content %}
+<div class="game-mode-container">
+    <form method="POST" action="{{ url_for('game.save_mode') }}" id="gameModeForm">
+        <!-- Mode Selection -->
+        <div class="card">
+            <h3>Game Direction</h3>
+            <div class="mode-options">
+                <label class="mode-option">
+                    <input type="radio" name="game_mode" value="up" {% if game_mode=='up' %}checked{% endif %}>
+                    <span class="mode-label">Only Up (1 → {{ max_cards }})</span>
+                </label>
+                <label class="mode-option">
+                    <input type="radio" name="game_mode" value="down" {% if game_mode=='down' %}checked{% endif %}>
+                    <span class="mode-label">Only Down ({{ max_cards }} → 1)</span>
+                </label>
+                <label class="mode-option">
+                    <input type="radio" name="game_mode" value="up_then_down" {% if game_mode=='up_then_down'
+                        %}checked{% endif %}>
+                    <span class="mode-label">Up then Down (1 → {{ max_cards }} → 1)</span>
+                </label>
+                <label class="mode-option">
+                    <input type="radio" name="game_mode" value="down_then_up" {% if game_mode=='down_then_up'
+                        %}checked{% endif %}>
+                    <span class="mode-label">Down then Up ({{ max_cards }} → 1 → {{ max_cards }}) (Default)</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="actions-container">
+            <button type="submit" name="action" value="continue" class="btn btn-primary btn-full">
+                Continue to Player Order
+            </button>
+
+            <button type="submit" name="action" value="customize" class="btn btn-secondary btn-full">
+                Hand Sequence Customization
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

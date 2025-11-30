@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Game Summary - Oh Hell! Scorer{% endblock %}
+{% block header_title %}Game Summary{% endblock %}
+
+{% block content %}
+<div class="summary-container">
+    <div class="card">
+        <h2>Ready to Start!</h2>
+        <p class="subtitle">Review your game configuration</p>
+
+        <div class="summary-section">
+            <h4>Tournament</h4>
+            <p>{{ config.tournament_name }}</p>
+        </div>
+
+        <div class="summary-section">
+            <h4>Players ({{ config.players|length }})</h4>
+            <ol class="player-list">
+                {% for player in config.players %}
+                <li>{{ player }}</li>
+                {% endfor %}
+            </ol>
+        </div>
+
+        <div class="summary-section">
+            <h4>Game Mode</h4>
+            <p>
+                {% if config.game_mode == 'up' %}Only Up
+                {% elif config.game_mode == 'down' %}Only Down
+                {% elif config.game_mode == 'up_then_down' %}Up then Down
+                {% elif config.game_mode == 'down_then_up' %}Down then Up
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="summary-section">
+            <h4>Hands ({{ config.selected_hands|length }})</h4>
+            <div class="hand-list">
+                {% for cards in config.selected_hands %}
+                <span class="hand-badge">{{ cards }}</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="summary-section">
+            <h4>First Dealer</h4>
+            <p>{{ config.players[config.first_dealer_index] }}</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('game.start_game') }}">
+            <button type="submit" class="btn btn-primary btn-large btn-full">
+                🎮 Start Game
+            </button>
+        </form>
+
+        <a href="{{ url_for('game.configure_order') }}" class="btn btn-secondary btn-full">
+            ← Back to Player Order
+        </a>
+    </div>
+</div>
+{% endblock %}

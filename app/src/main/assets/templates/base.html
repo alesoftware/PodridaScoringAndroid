@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>{% block title %}Oh Hell! Scorer{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v=2">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="app-header">
+        <!-- Left Section -->
+        <div class="header-left">
+            {% if session['username'] %}
+            {% if session.get('game') and session.get('game')['current_hand_index'] > 0 %}
+            <a href="{{ url_for('game.final_scores') }}" class="btn-icon btn-scores" title="View Scores">🏆</a>
+            {% endif %}
+            <span class="username">{{ session['username'] }}</span>
+            {% if session.get('is_admin') %}
+            <a href="{{ url_for('admin.manage_users') }}" class="btn-icon" title="Manage Users">👥</a>
+            {% endif %}
+            {% endif %}
+        </div>
+        
+        <!-- Center Section -->
+        <div class="header-center">
+            {% block header_content %}
+            <h1>{% block header_title %}Oh Hell! Scorer{% endblock %}</h1>
+            {% endblock %}
+        </div>
+        
+        <!-- Right Section -->
+        <div class="header-right">
+            {% if session['username'] %}
+            <a href="{{ url_for('auth.logout') }}" class="btn-icon btn-exit" title="Exit/Logout">✕</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-messages">
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main class="app-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        {% block footer %}{% endblock %}
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

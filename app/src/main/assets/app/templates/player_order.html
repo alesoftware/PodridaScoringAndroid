@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Players Order - Oh Hell! Scorer{% endblock %}
+{% block header_title %}Players Order{% endblock %}
+
+{% block content %}
+<div class="player-order-container">
+    <form method="POST" action="{{ url_for('game.save_order') }}">
+        <!-- Players Order -->
+        <div class="card">
+            <h3>Set Players Order</h3>
+            <p class="subtitle">Drag to reorder players</p>
+
+            <div class="player-order-list" id="playerOrderList">
+                {% for player in players %}
+                <div class="player-order-item" draggable="true">
+                    <span class="drag-handle">☰</span>
+                    <span class="player-name">{{ player }}</span>
+                    <input type="hidden" name="player_order" value="{{ player }}">
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full">
+            Continue to Dealer Assignment
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Simple drag and drop for player ordering
+    let draggedElement = null;
+
+    document.querySelectorAll('.player-order-item').forEach(item => {
+        item.addEventListener('dragstart', function (e) {
+            draggedElement = this;
+            this.style.opacity = '0.5';
+        });
+
+        item.addEventListener('dragend', function (e) {
+            this.style.opacity = '1';
+        });
+
+        item.addEventListener('dragover', function (e) {
+            e.preventDefault();
+        });
+
+        item.addEventListener('drop', function (e) {
+            e.preventDefault();
+            if (draggedElement !== this) {
+                const list = document.getElementById('playerOrderList');
+                const allItems = [...list.children];
+                const draggedIndex = allItems.indexOf(draggedElement);
+                const targetIndex = allItems.indexOf(this);
+
+                if (draggedIndex < targetIndex) {
+                    this.parentNode.insertBefore(draggedElement, this.nextSibling);
+                } else {
+                    this.parentNode.insertBefore(draggedElement, this);
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

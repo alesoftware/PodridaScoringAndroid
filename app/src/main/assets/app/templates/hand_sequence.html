@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Hand Sequence - Oh Hell! Scorer{% endblock %}
+{% block header_title %}Customize Hands{% endblock %}
+
+{% block content %}
+<div class="hand-sequence-container">
+    <form method="POST" action="{{ url_for('game.save_hand_sequence') }}" id="handSequenceForm">
+
+        <!-- Hand Sequence -->
+        <div class="card">
+            <h3>Hand Sequence</h3>
+            <p class="subtitle">Drag to reorder. Add or remove hands as needed.</p>
+
+            <div class="hand-sequence-list" id="handSequenceList">
+                <!-- Hands will be populated here by JS -->
+            </div>
+
+            <!-- Add Custom Hand -->
+            <div class="add-hand-section">
+                <div class="form-group">
+                    <label for="customHandCards">Add Hand (Cards)</label>
+                    <div class="input-group">
+                        <input type="number" id="customHandCards" min="1" max="{{ max_cards }}" value="1">
+                        <button type="button" class="btn btn-add" onclick="addCustomHand()">Add</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden input to store the final sequence -->
+        <input type="hidden" name="hands_sequence" id="handsSequenceInput">
+
+        <button type="submit" class="btn btn-primary btn-full">
+            Continue to Player Order
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const maxCards = {{ max_cards }};
+    let handSequence = [];
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', function () {
+        // Use saved sequence from session
+        const savedHands = {{ selected_hands| tojson
+    }};
+    if (savedHands && savedHands.length > 0) {
+        handSequence = savedHands;
+    } else {
+        // Fallback if empty (shouldn't happen with correct flow)
+        handSequence = [];
+    }
+    renderHands();
+    });
+
+    function renderHands() {
+        const list = document.getElementById('handSequenceList');
+        list.innerHTML = '';
+
+        handSequence.forEach((cards, index) => {
+            const item = document.createElement('div');
+            item.className = 'hand-sequence-item';
+            item.draggable = true;
+            item.dataset.index = index;
+
+            item.innerHTML = `
+                <span class="drag-handle">☰</span>
+                <span class="hand-value">${cards} cards</span>
+                <button type="button" class="btn-remove" onclick="removeHand(${index})">×</button>
+            `;
+
+            // Drag events
+            item.addEventListener('dragstart', handleDragStart);
+            item.addEventListener('dragover', handleDragOver);
+            item.addEventListener('drop', handleDrop);
+            item.addEventListener('dragend', handleDragEnd);
+
+            list.appendChild(item);
+        });
+    }
+
+    function addCustomHand() {
+        const input = document.getElementById('customHandCards');
+        const cards = parseInt(input.value);
+
+        if (cards >= 1 && cards <= maxCards) {
+            handSequence.push(cards);
+            renderHands();
+        } else {
+            alert(`Please enter a number between 1 and ${maxCards}`);
+        }
+    }
+
+    function removeHand(index) {
+        handSequence.splice(index, 1);
+        renderHands();
+    }
+
+    // Drag and Drop Logic
+    let draggedItem = null;
+
+    function handleDragStart(e) {
+        draggedItem = this;
+        this.style.opacity = '0.4';
+        e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragOver(e) {
+        if (e.preventDefault) {
+            e.preventDefault();
+        }
+        e.dataTransfer.dropEffect = 'move';
+        return false;
+    }
+
+    function handleDrop(e) {
+        if (e.stopPropagation) {
+            e.stopPropagation();
+        }
+
+        if (draggedItem !== this) {
+            const fromIndex = parseInt(draggedItem.dataset.index);
+            const toIndex = parseInt(this.dataset.index);
+
+            // Move item in array
+            const item = handSequence.splice(fromIndex, 1)[0];
+            handSequence.splice(toIndex, 0, item);
+
+            renderHands();
+        }
+        return false;
+    }
+
+    function handleDragEnd(e) {
+        this.style.opacity = '1';
+    }
+
+    // Form Submission
+    document.getElementById('handSequenceForm').addEventListener('submit', function (e) {
+        if (handSequence.length === 0) {
+            e.preventDefault();
+            alert('Please select at least one hand.');
+            return;
+        }
+        document.getElementById('handsSequenceInput').value = JSON.stringify(handSequence);
+    });
+</script>
+{% endblock %}

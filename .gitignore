@@ -1,0 +1,27 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Sensitive credentials
+credentials.json
+**/credentials.json
+
+# Keystores
+*.keystore
+*.jks
+
+# Build artifacts
+**/build/
+
+# Python environment
+**/env/
+**/__pycache__/
+*.pyc
+*.pyo

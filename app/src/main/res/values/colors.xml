@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Colores primarios basados en tu CSS -->
+    <color name="primary">#2c3e50</color>
+    <color name="primary_dark">#1a252f</color>
+    <color name="primary_light">#34495e</color>
+    <color name="accent">#3498db</color>
+    <color name="accent_dark">#2980b9</color>
+    
+    <!-- Colores de fondo -->
+    <color name="background">#f5f6fa</color>
+    <color name="surface">#ffffff</color>
+    
+    <!-- Colores de texto -->
+    <color name="text_primary">#2c3e50</color>
+    <color name="text_secondary">#7f8c8d</color>
+    <color name="text_on_primary">#ffffff</color>
+    
+    <!-- Colores de estado -->
+    <color name="success">#27ae60</color>
+    <color name="error">#e74c3c</color>
+    <color name="warning">#f39c12</color>
+    
+    <!-- Colores básicos -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="transparent">#00000000</color>
+</resources>

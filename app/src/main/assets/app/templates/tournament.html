@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Select Tournament - Oh Hell! Scorer{% endblock %}
+{% block header_title %}Select Tournament{% endblock %}
+
+{% block content %}
+<div class="tournament-container">
+    <div class="card">
+        <h2>Select Tournament</h2>
+        <p class="subtitle">Choose a Google Sheet to use as the tournament</p>
+
+        {% if spreadsheets %}
+        <form method="POST" action="{{ url_for('tournament.set_tournament') }}">
+            <div class="spreadsheet-list">
+                {% for sheet in spreadsheets %}
+                <label class="spreadsheet-item">
+                    <input type="radio" name="tournament_id" value="{{ sheet.id }}" required
+                        onchange="document.getElementById('tournament_name_input').value='{{ sheet.name }}'">
+                    <span class="spreadsheet-name">{{ sheet.name }}</span>
+                    <span class="check-icon">✓</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <input type="hidden" name="tournament_name" id="tournament_name_input">
+
+            <button type="submit" class="btn btn-primary btn-full">
+                Continue to Player Selection
+            </button>
+        </form>
+        {% else %}
+        <div class="empty-state">
+            <p>No tournaments found.</p>
+            <p class="help-text">
+                Share a Google Sheet with your service account email to use it as a tournament.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

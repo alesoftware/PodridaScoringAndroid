@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+
+{% block title %}Hand {{ current_hand.cards }} - Oh Hell! Scorer{% endblock %}
+{% block header_content %}
+<div class="hand-info-header">Hand {{ game.current_hand_index + 1 }} of {{ game.hands|length }} - {{ current_hand.cards }} cards</div>
+{% endblock %}
+{% block content %} <div class="bidding-container">
+    <div class="hand-info">
+        <h3>{{ game.get_current_dealer().name }} is dealing</h3>
+        <p class="tricks-bid">Tricks bid: <strong id="totalBids">{{ game.current_bids.values()|sum }}</strong></p>
+    </div>
+
+    {% if not bids_complete %}
+    <!-- Bidding Phase -->
+    <div class="card">
+        <h4>Bidding</h4>
+
+        <!-- Player Selection Buttons -->
+        <div class="player-selection-grid">
+            {% for player_idx in bidding_order %}
+            {% set player = game.players[player_idx] %}
+            <button type="button"
+                class="btn-player-select {% if player.name in game.current_bids %}player-done{% else %}player-pending{% endif %} {% if loop.first %}player-active{% endif %}"
+                id="player-btn-{{ player.name }}" onclick="selectPlayer('{{ player.name }}')" {% if
+                player.name==game.get_current_dealer().name and player.name not in game.current_bids %}disabled{% endif
+                %}>
+                <span class="player-name">{{ player.name }}</span>
+                <span class="player-bid" id="bid-display-{{ player.name }}">
+                    {% if player.name in game.current_bids %}
+                    {{ game.current_bids[player.name] }}
+                    {% else %}
+                    ?
+                    {% endif %}
+                </span>
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Single Number Pad -->
+        <div class="number-pad">
+            <p class="subtitle">Select bid for: <strong id="currentPlayerName">{{ game.players[bidding_order[0]].name
+                    }}</strong></p>
+            <div class="number-pad-grid">
+                {% for bid in range(0, current_hand.cards + 1) %}
+                <button type="button" class="btn btn-number" id="bid-btn-{{ bid }}" onclick="recordBid({{ bid }})">
+                    {{ bid }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Start Hand Button -->
+        <button type="button" id="startHandBtn" class="btn btn-primary btn-full" onclick="startHand()" {% if
+            game.current_bids|length !=game.players|length %}disabled{% endif %}>
+            Start Hand
+        </button>
+    </div>
+
+    {% elif not tricks_complete %}
+    <!-- Tricks Recording Phase -->
+    <div class="card">
+        <h4>Record Tricks Won</h4>
+
+        <!-- Player Selection Buttons -->
+        <div class="player-selection-grid">
+            {% for player_idx in bidding_order %}
+            {% set player = game.players[player_idx] %}
+            <button type="button"
+                class="btn-player-select {% if player.name in game.current_tricks %}player-done{% else %}player-pending{% endif %} {% if loop.first %}player-active{% endif %}"
+                id="trick-player-btn-{{ player.name }}" onclick="selectPlayerForTricks('{{ player.name }}')">
+                <span class="player-name">{{ player.name }}</span>
+                <span class="player-bid-large" id="trick-bid-{{ player.name }}">Bid: {{ game.current_bids[player.name]
+                    }}</span>
+                <span class="player-tricks" id="trick-display-{{ player.name }}">
+                    {% if player.name in game.current_tricks %}
+                    {{ game.current_tricks[player.name] }}
+                    {% else %}
+                    ?
+                    {% endif %}
+                </span>
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Single Number Pad for Tricks -->
+        <div class="number-pad">
+            <p class="subtitle">Tricks won by: <strong id="currentTrickPlayerName">{{
+                    game.players[bidding_order[0]].name }}</strong>
+            </p>
+            <div class="number-pad-grid">
+                {% for tricks in range(0, current_hand.cards + 1) %}
+                <button type="button" class="btn btn-number" onclick="recordTrick({{ tricks }})">
+                    {{ tricks }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Finish Hand Button -->
+        <button type="button" id="finishHandBtn" class="btn btn-primary btn-full" onclick="finishHand()" {% if
+            game.current_tricks|length !=game.players|length %}disabled{% endif %}>
+            Finish Hand
+        </button>
+    </div>
+
+    {% endif %}
+    </div>
+    {% endblock %}
+
+    {% block scripts %}
+    <script>
+        let currentPlayer = '{{ game.players[bidding_order[0]].name }}';
+        let currentTrickPlayer = '{{ game.players[bidding_order[0]].name }}';
+        const dealer = '{{ game.get_current_dealer().name }}';
+        const cardsDealt = {{ current_hand.cards }};
+        const numPlayers = {{ game.players| length }};
+
+        function selectPlayer(playerName) {
+            // Update current player
+            currentPlayer = playerName;
+            document.getElementById('currentPlayerName').textContent = playerName;
+
+            // Update button states
+            document.querySelectorAll('.btn-player-select').forEach(btn => {
+                btn.classList.remove('player-active');
+            });
+            document.getElementById('player-btn-' + playerName).classList.add('player-active');
+
+            // Update number pad based on dealer and Hook On rule
+            updateNumberPadForDealer();
+        }
+
+        function updateDealerButtonState() {
+            const dealerBtn = document.getElementById('player-btn-' + dealer);
+            if (!dealerBtn) return;
+
+            // Count how many non-dealer players have bid
+            const playerButtons = document.querySelectorAll('.btn-player-select');
+            let nonDealerBidsCount = 0;
+
+            playerButtons.forEach(btn => {
+                const playerName = btn.id.replace('player-btn-', '');
+                if (playerName !== dealer && btn.classList.contains('player-done')) {
+                    nonDealerBidsCount++;
+                }
+            });
+
+            // Enable dealer button only when all other players have bid
+            const totalPlayers = playerButtons.length;
+            if (nonDealerBidsCount >= totalPlayers - 1) {
+                dealerBtn.disabled = false;
+            } else {
+                dealerBtn.disabled = true;
+            }
+        }
+
+        function updateNumberPadForDealer() {
+            // Enable all buttons first
+            for (let i = 0; i <= cardsDealt; i++) {
+                const btn = document.getElementById('bid-btn-' + i);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.classList.remove('btn-disabled');
+                }
+            }
+
+            if (currentPlayer === dealer) {
+                // Calculate total bids from other players
+                let otherPlayersBids = 0;
+                document.querySelectorAll('.btn-player-select').forEach(btn => {
+                    const playerName = btn.id.replace('player-btn-', '');
+                    if (playerName !== dealer) {
+                        const bidDisplay = document.getElementById('bid-display-' + playerName);
+                        if (bidDisplay && bidDisplay.textContent.trim() !== '?') {
+                            otherPlayersBids += parseInt(bidDisplay.textContent);
+                        }
+                    }
+                });
+
+                // Calculate forbidden bid (Hook On rule)
+                const forbiddenBid = cardsDealt - otherPlayersBids;
+
+                // Disable the forbidden bid button
+                if (forbiddenBid >= 0 && forbiddenBid <= cardsDealt) {
+                    const forbiddenBtn = document.getElementById('bid-btn-' + forbiddenBid);
+                    if (forbiddenBtn) {
+                        forbiddenBtn.disabled = true;
+                        forbiddenBtn.classList.add('btn-disabled');
+                    }
+                }
+            }
+        }
+
+        function findNextUnbidPlayer() {
+            // Get all player buttons in order
+            const playerButtons = document.querySelectorAll('.btn-player-select');
+
+            // Find current player index
+            let currentIndex = -1;
+            playerButtons.forEach((btn, idx) => {
+                if (btn.classList.contains('player-active')) {
+                    currentIndex = idx;
+                }
+            });
+
+            // Look for next player without a bid (player-pending class)
+            for (let i = 1; i <= playerButtons.length; i++) {
+                const nextIndex = (currentIndex + i) % playerButtons.length;
+                const nextBtn = playerButtons[nextIndex];
+                if (nextBtn.classList.contains('player-pending')) {
+                    // Extract player name from button id
+                    const playerId = nextBtn.id; // "player-btn-PlayerName"
+                    return playerId.replace('player-btn-', '');
+                }
+            }
+
+            return null; // All players have bid
+        }
+
+        function recordBid(bid) {
+            // Send bid to server
+            fetch('{{ url_for("game.record_bid") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `player_name=${currentPlayer}&bid=${bid}`
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update UI
+                        const playerBtn = document.getElementById('player-btn-' + currentPlayer);
+                        document.getElementById('bid-display-' + currentPlayer).textContent = bid;
+                        playerBtn.classList.remove('player-pending');
+                        playerBtn.classList.add('player-done');
+                        document.getElementById('totalBids').textContent = data.total_bids;
+
+                        // Enable Start Hand button if all bids recorded
+                        if (data.bids_count >= numPlayers) {
+                            document.getElementById('startHandBtn').disabled = false;
+                        }
+
+                        // Update number pad for next selection
+                        updateNumberPadForDealer();
+
+                        // Update dealer button state
+                        updateDealerButtonState();
+
+                        // Auto-select next player who hasn't bid
+                        const nextPlayer = findNextUnbidPlayer();
+                        if (nextPlayer) {
+                            selectPlayer(nextPlayer);
+                        }
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to record bid');
+                });
+        }
+
+        function startHand() {
+            window.location.href = '{{ url_for("game.play_hand") }}';
+        }
+
+        function selectPlayerForTricks(playerName) {
+            // Update current player for tricks
+            currentTrickPlayer = playerName;
+            document.getElementById('currentTrickPlayerName').textContent = playerName;
+
+            // Update button states
+            document.querySelectorAll('.btn-player-select').forEach(btn => {
+                btn.classList.remove('player-active');
+            });
+            document.getElementById('trick-player-btn-' + playerName).classList.add('player-active');
+        }
+
+        function findNextUntrickedPlayer() {
+            // Get all trick player buttons in order
+            const playerButtons = document.querySelectorAll('[id^="trick-player-btn-"]');
+
+            // Find current player index
+            let currentIndex = -1;
+            playerButtons.forEach((btn, idx) => {
+                if (btn.classList.contains('player-active')) {
+                    currentIndex = idx;
+                }
+            });
+
+            // Look for next player without tricks (player-pending class)
+            for (let i = 1; i <= playerButtons.length; i++) {
+                const nextIndex = (currentIndex + i) % playerButtons.length;
+                const nextBtn = playerButtons[nextIndex];
+                if (nextBtn.classList.contains('player-pending')) {
+                    // Extract player name from button id
+                    const playerId = nextBtn.id; // "trick-player-btn-PlayerName"
+                    return playerId.replace('trick-player-btn-', '');
+                }
+            }
+
+            return null; // All players have recorded tricks
+        }
+
+        function recordTrick(tricks) {
+            fetch('{{ url_for("game.record_tricks") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `player_name=${currentTrickPlayer}&tricks=${tricks}`
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update UI
+                        const playerBtn = document.getElementById('trick-player-btn-' + currentTrickPlayer);
+                        document.getElementById('trick-display-' + currentTrickPlayer).textContent = tricks;
+                        playerBtn.classList.remove('player-pending');
+                        playerBtn.classList.add('player-done');
+
+                        // Enable Finish Hand button if all tricks recorded
+                        // We can check if all players have a value (not '?')
+                        let allRecorded = true;
+                        document.querySelectorAll('[id^="trick-display-"]').forEach(el => {
+                            if (el.textContent.trim() === '?') allRecorded = false;
+                        });
+
+                        if (allRecorded) {
+                            document.getElementById('finishHandBtn').disabled = false;
+                        }
+
+                        // Auto-select next player who hasn't recorded tricks
+                        const nextPlayer = findNextUntrickedPlayer();
+                        if (nextPlayer) {
+                            selectPlayerForTricks(nextPlayer);
+                        }
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to record tricks');
+                });
+        }
+
+        function finishHand() {
+            // Calculate total tricks
+            let totalTricks = 0;
+            document.querySelectorAll('[id^="trick-display-"]').forEach(elem => {
+                const tricks = parseInt(elem.textContent);
+                if (!isNaN(tricks)) {
+                    totalTricks += tricks;
+                }
+            });
+
+            // Validate total tricks equals cards dealt
+            if (totalTricks !== cardsDealt) {
+                alert(`Total tricks (${totalTricks}) must equal cards dealt (${cardsDealt}). Please correct the tricks.`);
+                return;
+            }
+
+            // Submit to calculate scores
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for("game.calculate_scores") }}';
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        // Auto-select first player on load
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initial check for buttons state
+            const numPlayers = {{ game.players| length
+        }};
+
+        // Check bids
+        {% if not bids_complete %}
+        const bidsCount = document.querySelectorAll('.btn-player-select.player-done').length;
+        if (bidsCount >= numPlayers) {
+            document.getElementById('startHandBtn').disabled = false;
+        }
+        {% endif %}
+
+        // Check tricks
+        {% if not tricks_complete and bids_complete %}
+        let allTricksRecorded = true;
+        document.querySelectorAll('[id^="trick-display-"]').forEach(el => {
+            if (el.textContent.trim() === '?') allTricksRecorded = false;
+        });
+        if (allTricksRecorded) {
+            document.getElementById('finishHandBtn').disabled = false;
+        }
+        {% endif %}
+
+        updateNumberPadForDealer();
+    });
+    </script>
+    {% endblock %}

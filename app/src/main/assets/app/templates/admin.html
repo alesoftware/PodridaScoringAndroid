@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - Oh Hell! Scorer{% endblock %}
+{% block header_title %}User Management{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <!-- Add New User -->
+    <div class="card">
+        <h3>Add New User</h3>
+        <form method="POST" action="{{ url_for('admin.add_user') }}" class="inline-form">
+            <div class="form-row">
+                <input type="text" name="username" placeholder="Username" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <button type="submit" class="btn btn-primary">Add</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Users List -->
+    <div class="card">
+        <h3>Users ({{ users|length }})</h3>
+
+        {% if users %}
+        <div class="users-list">
+            {% for user in users %}
+            <div class="user-item">
+                <div class="user-info">
+                    <strong>{{ user.username }}</strong>
+                </div>
+                <div class="user-actions">
+                    <button onclick="editUser('{{ user.username }}')" class="btn btn-small btn-secondary">
+                        Edit
+                    </button>
+                    <button onclick="resetPassword('{{ user.username }}')" class="btn btn-small btn-warning">
+                        Reset Password
+                    </button>
+                    <button onclick="deleteUser('{{ user.username }}')" class="btn btn-small btn-danger">
+                        Delete
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-state">No users yet. Add your first user above.</p>
+        {% endif %}
+    </div>
+
+    <div class="actions-footer">
+        <a href="{{ url_for('tournament.select_tournament') }}" class="btn btn-secondary btn-full">
+            Back to Tournament
+        </a>
+    </div>
+</div>
+
+<!-- Hidden forms for user actions -->
+<form id="editUserForm" method="POST" action="{{ url_for('admin.edit_user') }}" style="display:none;">
+    <input type="hidden" name="old_username" id="edit_old_username">
+    <input type="hidden" name="new_username" id="edit_new_username">
+    <input type="hidden" name="new_password" id="edit_new_password">
+</form>
+
+<form id="deleteUserForm" method="POST" action="{{ url_for('admin.delete_user') }}" style="display:none;">
+    <input type="hidden" name="username" id="delete_username">
+</form>
+
+<form id="resetPasswordForm" method="POST" action="{{ url_for('admin.reset_password') }}" style="display:none;">
+    <input type="hidden" name="username" id="reset_username">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function editUser(username) {
+        const newUsername = prompt('Enter new username:', username);
+        if (newUsername && newUsername !== username) {
+            const newPassword = prompt('Enter new password (leave blank to keep current):');
+            document.getElementById('edit_old_username').value = username;
+            document.getElementById('edit_new_username').value = newUsername || username;
+            document.getElementById('edit_new_password').value = newPassword || '';
+            document.getElementById('editUserForm').submit();
+        } else if (newUsername) {
+            const newPassword = prompt('Enter new password (leave blank to keep current):');
+            if (newPassword) {
+                document.getElementById('edit_old_username').value = username;
+                document.getElementById('edit_new_username').value = username;
+                document.getElementById('edit_new_password').value = newPassword;
+                document.getElementById('editUserForm').submit();
+            }
+        }
+    }
+
+    function deleteUser(username) {
+        if (confirm(`Are you sure you want to delete user "${username}"?`)) {
+            document.getElementById('delete_username').value = username;
+            document.getElementById('deleteUserForm').submit();
+        }
+    }
+
+    function resetPassword(username) {
+        if (confirm(`Reset password for user "${username}" to blank?`)) {
+            document.getElementById('reset_username').value = username;
+            document.getElementById('resetPasswordForm').submit();
+        }
+    }
+</script>
+{% endblock %}

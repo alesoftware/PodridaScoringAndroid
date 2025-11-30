@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Dealer Assignment - Oh Hell! Scorer{% endblock %}
+{% block header_title %}Dealer Assignment{% endblock %}
+
+{% block content %}
+<div class="dealer-assignment-container">
+    <form method="POST" action="{{ url_for('game.save_dealer') }}">
+        <!-- Dealer Assignment -->
+        <div class="card">
+            <h3>Dealer Assignment</h3>
+
+            {% if single_card_hands %}
+            <div class="dealer-mode-selection">
+                <p class="subtitle">Choose how to determine the dealer sequence:</p>
+                <div class="radio-group">
+                    <label class="mode-option">
+                        <input type="radio" name="dealer_mode" value="single_card" checked>
+                        <span class="mode-label">Single Card Hand Dealer (First 1-card hand)</span>
+                    </label>
+                    <label class="mode-option">
+                        <input type="radio" name="dealer_mode" value="start">
+                        <span class="mode-label">Start Dealer (First hand of game)</span>
+                    </label>
+                </div>
+            </div>
+            {% else %}
+            <input type="hidden" name="dealer_mode" value="start">
+            <p class="subtitle">Select the dealer for the first hand:</p>
+            {% endif %}
+
+            <div class="dealer-player-selection">
+                <p class="subtitle" id="dealerSelectLabel">Select Player:</p>
+                <div class="dealer-options-grid">
+                    {% for player in players %}
+                    <label class="dealer-option">
+                        <input type="radio" name="selected_dealer" value="{{ loop.index0 }}" {% if loop.first
+                            %}checked{% endif %} required>
+                        <span class="player-name">{{ player }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full">
+            Continue to Summary
+        </button>
+    </form>
+</div>
+{% endblock %}

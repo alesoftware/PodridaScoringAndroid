@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Scores - Oh Hell! Scorer{% endblock %}
+{% block header_content %}
+{% if game %}
+    {% if is_complete %}
+    <div class="hand-info-header">GAME FINISHED - All {{ game.hands|length }} hands completed</div>
+    {% else %}
+    <div class="hand-info-header">Hand {{ game.current_hand_index }} of {{ game.hands|length }} - {{ hand_cards }} cards</div>
+    {% endif %}
+{% else %}
+<div class="hand-info-header">Scores</div>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="scoring-container">
+    <div class="card">
+        {% if not is_complete %}
+        <h2>Hand {{ hand_cards }} Results</h2>
+        {% else %}
+        <h2>🏆 Final Results</h2>
+        <div style="font-size: 0.85em; color: #666; margin-top: 0.5em;">
+            {% set date_parts = game.sheet_name.split('#')[0].split('-') %}
+            Date: 20{{ date_parts[0] }}-{{ date_parts[1] }}-{{ date_parts[2] }} | 
+            Hands: {{ game.hands|length }} | 
+            Total Tricks: {{ game.hands|sum(attribute='cards') }}
+        </div>
+        {% endif %}
+
+        <div class="scores-table">
+            {% set ns = namespace(current_rank=1, prev_score=None, skip_count=0) %}
+            {% for player in players %}
+            {% if ns.prev_score is not none and player.total_score != ns.prev_score %}
+                {% set ns.current_rank = loop.index %}
+            {% endif %}
+            <div class="score-row {% if ns.current_rank == 1 %}winner{% endif %}">
+                <div class="rank">
+                    {% if ns.current_rank == 1 %}🥇
+                    {% elif ns.current_rank == 2 %}🥈
+                    {% elif ns.current_rank == 3 %}🥉
+                    {% else %}{{ ns.current_rank }}
+                    {% endif %}
+                </div>
+                <div class="player-info">
+                    <strong class="player-name">
+                        {{ player.name }}
+                        {% if not is_complete and next_dealer and player.name == next_dealer.name %}
+                        <span class="dealer-badge">{{ next_hand.cards }}</span>
+                        {% endif %}
+                    </strong>
+                    {% if player.is_invicto %}
+                    <p class="invicto-badge">INVICTO - NO SE LO ALCANZA MÁS</p>
+                    {% endif %}
+                </div>
+                <div class="score">
+                    <strong>{{ player.total_score }}</strong>
+                    <span class="score-label">pts</span>
+                </div>
+            </div>
+            {% set ns.prev_score = player.total_score %}
+            {% endfor %}
+        </div>
+
+        {% if is_complete %}
+        <!-- Game Complete Actions -->
+        <div class="game-complete-actions">
+            <form method="POST" action="{{ url_for('game.new_game') }}">
+                <button type="submit" class="btn btn-secondary btn-full">
+                    🎮 New Game
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('game.new_game_same_config') }}">
+                <button type="submit" class="btn btn-primary btn-full">
+                    ↻ New Game (Same Config)
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <!-- Continue to Next Hand -->
+        <form method="GET" action="{{ url_for('game.play_hand') }}">
+            <button type="submit" class="btn btn-primary btn-large btn-full">
+                Continue to Next Hand →
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- Hand Details -->
+    <div class="card">
+        <h4>Last Hand Details</h4>
+        <div class="hand-details">
+            {% for player in players %}
+            <div class="hand-detail-row">
+                <span class="player-name">{{ player.name }}</span>
+                {% if player.hands %}
+                {% set last_hand = player.hands[-1] %}
+                <span class="detail">
+                    Bid: {{ last_hand.bid }} | Won: {{ last_hand.won }} | Score: {{ last_hand.score }}
+                </span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

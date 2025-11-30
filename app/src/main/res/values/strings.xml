@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Podrida Scoring</string>
+    <string name="loading_server">Iniciando servidor...</string>
+    <string name="connecting_server">Conectando al servidor...</string>
+    <string name="error_starting_server">Error al iniciar el servidor</string>
+    <string name="retry">Reintentar</string>
+</resources>
