@@ -5,12 +5,38 @@ Flask corre en modo local sin reload.
 import os
 import sys
 
+# Debug: Mostrar rutas de Python
+print("=== PYTHON PATH DEBUG ===")
+print(f"Python version: {sys.version}")
+print(f"Current working directory: {os.getcwd()}")
+print("Python path:")
+for path in sys.path:
+    print(f"  - {path}")
+print("=== END DEBUG ===")
+
 # Configuración para Android
 os.environ['DEV_MODE'] = 'False'
 os.environ['FLASK_ENV'] = 'production'
 
+# Configurar entorno Android
+try:
+    from android_config import setup_android_env
+    setup_android_env()
+except Exception as e:
+    print(f"Warning: Could not load android_config: {e}")
+
 # Importar la app Flask
-from app import create_app
+try:
+    from app import create_app
+except ImportError as e:
+    print(f"ERROR importing app: {e}")
+    print("Trying to add current directory to path...")
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if current_dir not in sys.path:
+        sys.path.insert(0, current_dir)
+    print(f"Added {current_dir} to sys.path")
+    from app import create_app
 
 app = create_app()
 

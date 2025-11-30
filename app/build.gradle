@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace 'com.alesoftware.podridascoring'
-    compileSdk 36
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.alesoftware.podridascoring"
@@ -27,6 +27,11 @@ android {
             
             // Specify Python 3.8 executable for bytecode compilation
             buildPython "C:/Users/alema/.pyenv/pyenv-win/versions/3.8.10/python.exe"
+            
+            // Configure Python source directories
+            // pyc {
+            //    src = true  // Enable Python source files from assets
+            // }
             
             // Instalar dependencias Python desde pip
             pip {
@@ -65,7 +70,7 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.17.0'
+    implementation 'androidx.core:core-ktx:1.13.1'
     implementation 'androidx.appcompat:appcompat:1.7.1'
     implementation 'com.google.android.material:material:1.13.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.2.1'

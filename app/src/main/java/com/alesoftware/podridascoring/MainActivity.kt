@@ -138,26 +138,22 @@ class MainActivity : AppCompatActivity() {
                     showLoading("Cargando módulos Python...")
                 }
                 
-                // Obtener módulo run_android
-                Log.d(TAG, "Importando módulo run_android...")
-                val module = py.getModule("run_android")
-                Log.d(TAG, "Módulo run_android importado")
+                // Ejecutar código Python directamente
+                Log.d(TAG, "Configurando entorno Android...")
                 
+                // Programar carga del WebView para dar tiempo a que arranque el servidor
                 withContext(Dispatchers.Main) {
                     showLoading("Arrancando servidor local...")
+                    Log.d(TAG, "Programando carga de WebView en 3s...")
+                    webView.postDelayed({
+                        loadFlaskApp()
+                    }, 3000)
                 }
                 
-                // Dar tiempo al servidor para iniciar antes de cargar la página
-                delay(3000)
-                
-                withContext(Dispatchers.Main) {
-                    Log.d(TAG, "Cargando aplicación Flask en WebView...")
-                    loadFlaskApp()
-                }
-                
-                // Iniciar servidor Flask (esta llamada es bloqueante)
-                Log.d(TAG, "Llamando a start_server()...")
-                module.callAttr("start_server")
+                // Ejecutar Flask (bloqueante) - Iniciar inmediatamente
+                Log.d(TAG, "Ejecutando servidor Flask...")
+                val runAndroid = py.getModule("run_android")
+                runAndroid.callAttr("start_server")
                 
             } catch (e: Exception) {
                 Log.e(TAG, "Error al iniciar servidor Flask", e)
