@@ -6,11 +6,14 @@ import android.util.Log
 import android.view.View
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
@@ -41,6 +44,9 @@ class MainActivity : AppCompatActivity() {
         // Configurar WebView
         setupWebView()
         
+        // Configurar manejo de botón atrás
+        setupBackPressedHandler()
+        
         // Inicializar Python y arrancar Flask
         startFlaskServer()
     }
@@ -52,7 +58,7 @@ class MainActivity : AppCompatActivity() {
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
-            databaseEnabled = true
+            // databaseEnabled is deprecated, DOM storage is sufficient
             allowFileAccess = true
             allowContentAccess = true
             setSupportZoom(true)
@@ -77,16 +83,15 @@ class MainActivity : AppCompatActivity() {
             }
             
             override fun onReceivedError(
-                view: WebView?,
-                errorCode: Int,
-                description: String?,
-                failingUrl: String?
+                view: WebView,
+                request: WebResourceRequest,
+                error: WebResourceError
             ) {
-                super.onReceivedError(view, errorCode, description, failingUrl)
-                Log.e(TAG, "WebViewClient: Error $errorCode: $description en $failingUrl")
+                super.onReceivedError(view, request, error)
+                Log.e(TAG, "WebViewClient: Error ${error.errorCode}: ${error.description} en ${request.url}")
                 
                 // Reintentar carga después de un delay
-                if (failingUrl == serverUrl) {
+                if (request.url.toString() == serverUrl) {
                     showLoading("Error de conexión. Reintentando...")
                     webView.postDelayed({
                         Log.d(TAG, "Reintentando cargar Flask...")
@@ -118,7 +123,7 @@ class MainActivity : AppCompatActivity() {
         // Inicializar Python si no está inicializado
         if (!Python.isStarted()) {
             Log.d(TAG, "Iniciando Python...")
-            AndroidPlatform.start(this.application)
+            Python.start(AndroidPlatform(this))
         }
         
         showLoading("Iniciando servidor Flask...")
@@ -194,15 +199,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    override fun onBackPressed() {
-        // Manejar navegación hacia atrás en WebView
-        if (webView.canGoBack()) {
-            Log.d(TAG, "onBackPressed: Navegando atrás en WebView")
-            webView.goBack()
-        } else {
-            Log.d(TAG, "onBackPressed: Saliendo de la aplicación")
-            super.onBackPressed()
-        }
+    private fun setupBackPressedHandler() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Manejar navegación hacia atrás en WebView
+                if (webView.canGoBack()) {
+                    Log.d(TAG, "onBackPressed: Navegando atrás en WebView")
+                    webView.goBack()
+                } else {
+                    Log.d(TAG, "onBackPressed: Saliendo de la aplicación")
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
     }
     
     override fun onDestroy() {
