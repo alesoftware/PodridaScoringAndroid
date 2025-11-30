@@ -6,11 +6,11 @@ import os
 
 # Configuración por defecto para Android
 ANDROID_CONFIG = {
-    'SECRET_KEY': 'android-secret-key-change-in-production-12345678',
+    'SECRET_KEY': 'b90c105023e538d213c768b0093421c3b3dde6bcbbe94416a685e3a94ae618ae',
     'ADMIN_USERNAME': 'admin',
-    'ADMIN_PASSWORD': 'admin',  # Usuario debe cambiar en primera ejecución
+    'ADMIN_PASSWORD': 'admin25007708@',  # Usuario debe cambiar en primera ejecución
     'GOOGLE_SERVICE_ACCOUNT_FILE': 'credentials.json',
-    'USERS_SHEET_ID': '',  # Usuario configura en primera ejecución
+    'USERS_SHEET_ID': '1VvPcAQ1KAYrM-sQuM1XAP7iYL9Uytvx6IALbA13-u1s',  # Usuario configura en primera ejecución
     'DEV_MODE': 'False',
     'FLASK_ENV': 'production',
     'SESSION_COOKIE_HTTPONLY': 'True',
