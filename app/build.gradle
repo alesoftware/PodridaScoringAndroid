@@ -48,10 +48,20 @@ android {
         }
     }
 
+    signingConfigs {
+        release {
+            storeFile file("../podridascoring.keystore")
+            storePassword "admin25007708@"
+            keyAlias "podridascoring"
+            keyPassword "admin25007708@"
+        }
+    }
+
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
         }
     }
 

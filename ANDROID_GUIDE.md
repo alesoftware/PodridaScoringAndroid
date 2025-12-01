@@ -90,7 +90,7 @@ F:\PodridaScoring\
 │   └── requirements-android.txt
 │
 └── 🛠️ SCRIPTS
-    └── copy-to-android.ps1
+    └── copy-to-assets.ps1
 ```
 
 ---
@@ -100,7 +100,7 @@ F:\PodridaScoring\
 ## ✅ What you have right now
 
 Everything is ready:
-- ✅ Complete Android project in `F:\PodridaScoring\android\`
+- ✅ Complete Android project in `F:\PodridaScoringAndroid\`
 - ✅ Flask code copied to `assets`
 - ✅ Chaquopy configuration ready
 - ✅ MainActivity implemented
@@ -121,7 +121,7 @@ Everything is ready:
 
 1. Open **Android Studio**
 2. `File` → `Open`
-3. Navigate to: **`F:\PodridaScoring\android`**
+3. Navigate to: **`F:\PodridaScoringAndroid`**
 4. Click `OK`
 
 ## ⚙️ Step 3: Wait for Sync
@@ -193,13 +193,19 @@ Android Studio will do this automatically:
 Run the copy script from PowerShell:
 
 ```powershell
-cd F:\PodridaScoring
-.\copy-to-android.ps1
+cd F:\PodridaScoringAndroid
+.\copy-to-assets.ps1
 ```
 
 This will copy all your Flask code to the `assets` folder of the Android project.
 
-Remove-Item -Path "F:\PodridaScoring\android\app\build" -Recurse -Force
+### Step 2: Clean Build (Optional)
+
+If you have build errors, clean the build folder:
+
+```powershell
+Remove-Item -Path "app\build" -Recurse -Force
+```
 
 ### Step 3: Gradle Sync
 
@@ -353,11 +359,12 @@ To make changes:
 
 1. **Create Keystore** (first time):
    ```powershell
-   cd F:\PodridaScoring\android
+   cd F:\PodridaScoringAndroid
    keytool -genkey -v -keystore podridascoring.keystore -alias podridascoring -keyalg RSA -keysize 2048 -validity 10000
    ```
    - Enter password (save it well)
    - Complete data (name, organization, etc.)
+   CN=Alejandro YACONO ESMENDI, OU=Alex Corp, O=Alex Corp, L=Rosario, ST=Santa Fe, C=A
 
 2. **Configure Signing** in `app/build.gradle`:
    ```gradle
@@ -450,7 +457,7 @@ The Android app will run your Flask server **locally inside the device** using:
 - ✅ Modified `app/__init__.py` - Automatic Android detection
 
 ### 4. Helper Scripts:
-- ✅ `copy-to-android.ps1` - Automatic copy script
+- ✅ `copy-to-assets.ps1` - Automated copy script
 
 ### 5. Files Copied to Assets:
 - ✅ Complete `app/` folder with all your Flask logic
@@ -548,7 +555,7 @@ def is_android():
 code F:\PodridaScoring\app\routes\game.py
 
 # 2. Copy to Android
-.\copy-to-android.ps1
+.\copy-to-assets.ps1
 
 # 3. Recompile in Android Studio
 Build → Clean Project
@@ -561,7 +568,7 @@ Run ▶️
 ### Testing cycle:
 
 1. Modify Python/Flask code
-2. Run `copy-to-android.ps1`
+2. Run `copy-to-assets.ps1`
 3. Clean + Rebuild in Android Studio
 4. Deploy to device/emulator
 5. Check Logcat for errors
@@ -635,7 +642,7 @@ Secure options:
 - Modified `app/__init__.py` - Android detection
 
 ### Helper Scripts:
-- `copy-to-android.ps1` - Automated copy script
+- `copy-to-assets.ps1` - Automated copy script
 
 ### Assets (Flask Code):
 - Complete `app/` folder
@@ -788,7 +795,31 @@ If you get coroutines compatibility errors, the Kotlin version must be 2.0+ to w
 1. Check Logcat for exact error
 2. Common: `ModuleNotFoundError`
    - **Cause**: Files not copied to assets
-   - **Solution**: Run `copy-to-android.ps1` again
+   - **Solution**: Run `copy-to-assets.ps1` again
+
+#### "SystemError: frame does not exist"
+**Solution**:
+This happens when using Python threading.
+**Fix**: Use Kotlin Coroutines to run Flask on a background thread instead of Python's threading module.
+
+#### "APK app-debug.apk is not compatible with 16 KB devices"
+**Solution**:
+In `app/build.gradle`, add inside `android { ... }`:
+```gradle
+packaging {
+    jniLibs {
+        useLegacyPackaging = true
+    }
+}
+```
+
+#### "Could not initialize Google Sheets: [Errno 2] No such file or directory: 'credentials.json'"
+**Solution**:
+1. Ensure `credentials.json` is in `app/src/main/assets/`
+2. Ensure `android_config.py` is configured to find it relative to itself:
+   ```python
+   credentials_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'credentials.json')
+   ```
 
 #### WebView shows blank page
 **Solution**:
@@ -828,12 +859,12 @@ If you get coroutines compatibility errors, the Kotlin version must be 2.0+ to w
 
 ### Copy Flask files to Android
 ```powershell
-.\copy-to-android.ps1
+.\copy-to-assets.ps1
 ```
 
 ### View assets content
 ```powershell
-Get-ChildItem android\app\src\main\assets -Recurse
+Get-ChildItem app\src\main\assets -Recurse
 ```
 
 ### Check Logcat (when app runs)
@@ -847,10 +878,10 @@ Filter: com.alesoftware.podridascoring
 Before running, verify:
 
 - [ ] Android Studio installed with JDK 17
-- [ ] Project opened at `F:\PodridaScoring\android`
+- [ ] Project opened at `F:\PodridaScoringAndroid`
 - [ ] Gradle synced successfully
-- [ ] Script `copy-to-android.ps1` executed
-- [ ] Files in `android/app/src/main/assets/`:
+- [ ] Script `copy-to-assets.ps1` executed
+- [ ] Files in `app/src/main/assets/`:
   - [ ] Folder `app/`
   - [ ] Folder `static/`
   - [ ] Folder `templates/`
