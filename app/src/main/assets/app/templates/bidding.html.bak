@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Hand {{ current_hand.cards }} - Oh Hell! Scorer{% endblock %}
+{% block header_title %}
+HAND {{ current_hand.cards }}
+{% if game.game_mode == 'up' or (game.current_hand_index < game.hands|length // 2 and game.game_mode=='up_then_down' )
+    %} UP {% else %} DOWN {% endif %} {% endblock %} {% block content %} <div class="bidding-container">
+    <div class="hand-info">
+        <h3>{{ game.get_current_dealer().name }} is dealing</h3>
+        <p class="tricks-bid">Tricks bid: <strong id="totalBids">{{ game.current_bids.values()|sum }}</strong></p>
+    </div>
+
+    {% if not bids_complete %}
+    <!-- Bidding Phase -->
+    <div class="card">
+        <h4>Bidding</h4>
+        <div class="bidding-grid">
+            {% for player_idx in bidding_order %}
+            {% set player = game.players[player_idx] %}
+            <div class="bidding-row">
+                <div class="player-name-col">
+                    <strong>{{ player.name }}</strong>
+                </div>
+                <div class="bid-buttons-col" id="bid-buttons-{{ player.name }}">
+                    {% if player.name in game.current_bids %}
+                    <span class="bid-selected">{{ game.current_bids[player.name] }}</span>
+                    <button type="button" class="btn btn-small btn-warning" onclick="changeBid('{{ player.name }}')">
+                        Change
+                    </button>
+                    {% else %}
+                    {% for bid in range(0, current_hand.cards + 1) %}
+                    <button type="button" class="btn btn-bid" onclick="recordBid('{{ player.name }}', {{ bid }})"
+                        id="bid-{{ player.name }}-{{ bid }}">
+                        {{ bid }}
+                    </button>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if game.current_bids|length == game.players|length %}
+    <form method="GET" action="{{ url_for('game.play_hand') }}">
+        <button type="submit" class="btn btn-primary btn-full">
+            Start Hand
+        </button>
+    </form>
+    {% endif %}
+
+    {% elif not tricks_complete %}
+    <!-- Tricks Recording Phase -->
+    <div class="card">
+        <h4>Record Tricks Won</h4>
+        <div class="tricks-grid">
+            {% for player in game.players %}
+            <div class="tricks-row">
+                <div class="player-info-col">
+                    <strong>{{ player.name }}</strong>
+                    <span class="bid-display">Bid: {{ game.current_bids[player.name] }}</span>
+                </div>
+                <div class="tricks-buttons-col" id="tricks-buttons-{{ player.name }}">
+                    {% if player.name in game.current_tricks %}
+                    <span class="tricks-selected">{{ game.current_tricks[player.name] }}</span>
+                    {% else %}
+                    {% for tricks in range(0, current_hand.cards + 1) %}
+                    <button type="button" class="btn btn-trick"
+                        onclick="recordTricks('{{ player.name }}', {{ tricks }})">
+                        {{ tricks }}
+                    </button>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if game.current_tricks|length == game.players|length %}
+    <form method="POST" action="{{ url_for('game.calculate_scores') }}">
+        <button type="submit" class="btn btn-primary btn-full">
+            Calculate Scores
+        </button>
+    </form>
+    {% endif %}
+
+    {% endif %}
+    </div>
+    {% endblock %}
+
+    // Send bid to server
+    fetch('{{ url_for("game.record_bid") }}', {
+    method: 'POST',
+    headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: `player_name=${playerName}&bid=${bid}`
+    })
+    .then(response => response.json())
+    .then(data => {
+    if (data.success) {
+    // Update UI
+    document.getElementById('bid-buttons-' + playerName).innerHTML =
+    `<span class="bid-selected">${bid}</span>
+    <button type="button" class="btn btn-small btn-warning" onclick="changeBid('${playerName}')">Change</button>`;
+    document.getElementById('totalBids').textContent = data.total_bids;
+
+    // Check if all bids recorded
+    const numPlayers = {{ game.players| length
+    }
+    };
+    if (data.total_bids >= numPlayers) {
+    location.reload();
+    }
+    } else {
+    alert('Error: ' + data.error);
+    }
+    });
+    }
+
+    function changeBid(playerName) {
+    if (confirm('Change bid for ' + playerName + '?')) {
+    location.reload();
+    }
+    }
+
+    function recordTricks(playerName, tricks) {
+    fetch('{{ url_for("game.record_tricks") }}', {
+    method: 'POST',
+    headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: `player_name=${playerName}&tricks=${tricks}`
+    })
+    .then(response => response.json())
+    .then(data => {
+    if (data.success) {
+    document.getElementById('tricks-buttons-' + playerName).innerHTML =
+    `<span class="tricks-selected">${tricks}</span>`;
+
+    // Check if all tricks recorded
+    setTimeout(() => location.reload(), 500);
+    } else {
+    alert('Error: ' + data.error);
+    }
+    });
+    }
+    </script>
+    {% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Oh Hell! Scorer{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <h2>Welcome</h2>
+        <p class="subtitle">Sign in to start scoring</p>
+
+        <form method="POST" action="{{ url_for('auth.login') }}" class="login-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required autocomplete="username" autofocus>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+        </form>
+
+        {% if dev_mode %}
+        <div class="dev-mode-section">
+            <p class="dev-notice">Development Mode Active</p>
+            <a href="{{ url_for('auth.dev_bypass') }}" class="btn btn-secondary btn-full">
+                Bypass Authentication (DEV)
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

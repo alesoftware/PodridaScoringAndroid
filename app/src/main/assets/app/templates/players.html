@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Select Players - Oh Hell! Scorer{% endblock %}
+{% block header_title %}{{ tournament_name }}{% endblock %}
+
+{% block content %}
+<div class="players-container">
+    <div class="card">
+        <h2>Choose Players</h2>
+        <p class="subtitle">Select players for this game</p>
+
+        <form method="POST" action="{{ url_for('tournament.save_selected_players') }}" id="playersForm">
+            <!-- Selected Players Count -->
+            <div class="selected-count">
+                <strong><span id="selectedCount">{{ selected_players|length }}</span></strong> players selected
+            </div>
+
+            <!-- Add New Player -->
+            <div class="add-player-section">
+                <button type="button" class="btn btn-add" onclick="showAddPlayerDialog()">
+                    <span class="plus-icon">+</span> Add New Player
+                </button>
+            </div>
+
+            <!-- Players Grid -->
+            {% if players %}
+            <div class="players-grid">
+                {% for player in players %}
+                <label class="player-button {% if player in selected_players %}selected{% endif %}">
+                    <input type="checkbox" name="selected_players" value="{{ player }}" {% if player in selected_players
+                        %}checked{% endif %} onchange="updateSelectedCount()">
+                    <span class="player-name">{{ player }}</span>
+                    <span class="check-icon">✓</span>
+                </label>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No players yet. Add your first player above.</p>
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary btn-full">
+                Continue
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Add Player Dialog (hidden) -->
+<div id="addPlayerDialog" class="dialog-overlay" style="display:none;">
+    <div class="dialog">
+        <h3>Add New Player</h3>
+        <form method="POST" action="{{ url_for('tournament.add_player') }}">
+            <div class="form-group">
+                <label for="player_name">Player Name</label>
+                <input type="text" id="player_name" name="player_name" maxlength="10" required autofocus>
+            </div>
+            <div class="dialog-actions">
+                <button type="button" class="btn btn-secondary" onclick="hideAddPlayerDialog()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Add Player
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateSelectedCount() {
+        const checkboxes = document.querySelectorAll('input[name="selected_players"]:checked');
+        document.getElementById('selectedCount').textContent = checkboxes.length;
+
+        // Update button styling
+        document.querySelectorAll('.player-button').forEach(btn => {
+            const checkbox = btn.querySelector('input[type="checkbox"]');
+            if (checkbox.checked) {
+                btn.classList.add('selected');
+            } else {
+                btn.classList.remove('selected');
+            }
+        });
+    }
+
+    function showAddPlayerDialog() {
+        document.getElementById('addPlayerDialog').style.display = 'flex';
+        document.getElementById('player_name').focus();
+    }
+
+    function hideAddPlayerDialog() {
+        document.getElementById('addPlayerDialog').style.display = 'none';
+    }
+</script>
+{% endblock %}

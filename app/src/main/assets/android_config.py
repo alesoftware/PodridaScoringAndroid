@@ -22,28 +22,43 @@ def setup_android_env():
     """Configura variables de entorno para Android."""
     print("=== CONFIGURANDO ENTORNO ANDROID ===")
     
-    # Buscar credentials.json relativo a este archivo
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    credentials_path = os.path.join(base_dir, 'credentials.json')
+    # En Android, buscar credentials.json en el directorio correcto
+    import sys
+    credentials_found = False
     
-    if os.path.exists(credentials_path):
-        ANDROID_CONFIG['GOOGLE_SERVICE_ACCOUNT_FILE'] = credentials_path
-        print(f"✓ Credentials found at: {credentials_path}")
-    else:
-        print(f"✗ Credentials NOT found at: {credentials_path}")
-        # Intentar buscar en assets si no está en python dir
-        try:
-            from com.chaquo.python import Python
-            context = Python.getInstance().platform.getApplication()
-            files_dir = str(context.getFilesDir())
-            extracted_path = os.path.join(files_dir, 'credentials.json')
-            
-            # Si no existe extraído, intentar extraerlo (opcional, pero gspread necesita archivo)
-            # Por ahora asumimos que si está en python/ se empaqueta correctamente
-            pass
-        except:
-            pass
-
+    # Debug: mostrar sys.path
+    print("sys.path entries:")
+    for path in sys.path:
+        print(f"  - {path}")
+        
+    # Intentar encontrar credentials.json
+    possible_paths = [
+        'credentials.json',  # Relative to current directory
+        '/data/data/com.alesoftware.podridascoring/files/chaquopy/AssetFinder/app/credentials.json',
+    ]
+    
+    # Buscar en sys.path
+    for base_path in sys.path:
+        test_path = os.path.join(base_path, 'credentials.json')
+        if os.path.exists(test_path):
+            ANDROID_CONFIG['GOOGLE_SERVICE_ACCOUNT_FILE'] = test_path
+            print(f"✓ Credentials found at: {test_path}")
+            credentials_found = True
+            break
+    
+    if not credentials_found:
+        print("⚠ Warning: credentials.json not found in sys.path")
+        # Intentar rutas posibles
+        for test_path in possible_paths:
+            if os.path.exists(test_path):
+                ANDROID_CONFIG['GOOGLE_SERVICE_ACCOUNT_FILE'] = test_path
+                print(f"✓ Credentials found at: {test_path}")
+                credentials_found = True
+                break
+    
+    if not credentials_found:
+        print("✗ Could not find credentials.json")
+    
     for key, value in ANDROID_CONFIG.items():
         if key not in os.environ or not os.environ[key]:
             os.environ[key] = value
